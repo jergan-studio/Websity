@@ -27,26 +27,43 @@ jobs:
         shell: cmd
         run: |
           if exist build rmdir /s /q build
+          if exist dist rmdir /s /q dist
           mkdir build
+          mkdir dist
           javac -d build src\main\java\App.java
 
       - name: Create JAR
         shell: cmd
         run: |
-          if exist dist rmdir /s /q dist
-          mkdir dist
-          mkdir dist\app
           jar --create --file dist\Websity.jar --main-class App -C build .
-          xcopy /E /I /Y web dist\app\web
-          copy /Y dist\Websity.jar dist\app\Websity.jar
 
-      - name: Create Windows EXE
+      - name: Create Windows application image
+        shell: cmd
+        run: |
+          mkdir dist\app-input
+          xcopy /E /I /Y web dist\app-input\web
+          copy /Y dist\Websity.jar dist\app-input\Websity.jar
+          jpackage ^
+            --type app-image ^
+            --name Websity ^
+            --input dist\app-input ^
+            --main-jar Websity.jar ^
+            --main-class App ^
+            --dest dist ^
+            --app-version 1.0.0 ^
+            --add-modules jdk.httpserver
+
+      - name: Create portable ZIP
+        shell: powershell
+        run: Compress-Archive -Path dist\Websity\* -DestinationPath dist\Websity-Portable.zip -Force
+
+      - name: Create Windows MSI installer
         shell: cmd
         run: |
           jpackage ^
-            --type exe ^
+            --type msi ^
             --name Websity ^
-            --input dist\app ^
+            --input dist\app-input ^
             --main-jar Websity.jar ^
             --main-class App ^
             --dest dist ^
@@ -56,22 +73,25 @@ jobs:
             --win-menu ^
             --win-shortcut
 
-      - name: Create download copy
-        shell: cmd
-        run: copy /Y dist\Websity-1.0.0.exe dist\Websity.exe
-
-      - name: Upload Websity JAR artifact
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: Websity-JAR
           path: dist/Websity.jar
           if-no-files-found: error
 
-      - name: Upload Websity Windows EXE artifact
+      - name: Upload portable app
         uses: actions/upload-artifact@v4
         with:
-          name: Websity-Windows-EXE
-          path: dist/Websity.exe
+          name: Websity-Portable
+          path: dist/Websity-Portable.zip
+          if-no-files-found: error
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Websity-Windows-Installer
+          path: dist/Websity-1.0.0.msi
           if-no-files-found: error
 
       - name: Publish GitHub Release
@@ -83,5 +103,6 @@ jobs:
           make_latest: true
           overwrite_files: true
           files: |
-            dist/Websity.exe
+            dist/Websity-1.0.0.msi
+            dist/Websity-Portable.zip
             dist/Websity.jar
