@@ -1,10 +1,13 @@
-name: Build Websity Windows App
+name: Build and Release Websity Windows App
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -52,16 +55,32 @@ jobs:
             --win-menu ^
             --win-shortcut
 
-      - name: Upload Websity JAR
+      - name: Create download copy
+        shell: cmd
+        run: copy /Y dist\Websity-1.0.0.exe dist\Websity.exe
+
+      - name: Upload Websity JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: Websity-JAR
           path: dist/Websity.jar
           if-no-files-found: error
 
-      - name: Upload Websity Windows EXE
+      - name: Upload Websity Windows EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: Websity-Windows-EXE
-          path: dist/Websity-1.0.0.exe
+          path: dist/Websity.exe
           if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Websity Latest
+          prerelease: false
+          make_latest: true
+          overwrite_files: true
+          files: |
+            dist/Websity.exe
+            dist/Websity.jar
