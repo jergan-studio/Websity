@@ -1,0 +1,67 @@
+name: Build Websity Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Websity
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Compile Java
+        shell: cmd
+        run: |
+          if exist build rmdir /s /q build
+          mkdir build
+          javac -d build src\main\java\App.java
+
+      - name: Create JAR
+        shell: cmd
+        run: |
+          if exist dist rmdir /s /q dist
+          mkdir dist
+          mkdir dist\app
+          jar --create --file dist\Websity.jar --main-class App -C build .
+          xcopy /E /I /Y web dist\app\web
+          copy /Y dist\Websity.jar dist\app\Websity.jar
+
+      - name: Create Windows EXE
+        shell: cmd
+        run: |
+          jpackage ^
+            --type exe ^
+            --name Websity ^
+            --input dist\app ^
+            --main-jar Websity.jar ^
+            --main-class App ^
+            --dest dist ^
+            --app-version 1.0.0 ^
+            --win-dir-chooser ^
+            --win-menu ^
+            --win-shortcut
+
+      - name: Upload Websity JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: Websity-JAR
+          path: dist/Websity.jar
+          if-no-files-found: error
+
+      - name: Upload Websity Windows EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Websity-Windows-EXE
+          path: dist/Websity-1.0.0.exe
+          if-no-files-found: error
