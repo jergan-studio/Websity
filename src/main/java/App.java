@@ -1,5 +1,9 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.web.WebView;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,25 +13,49 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class App {
+public class App extends Application {
     private static final int PORT = 8080;
+    private static HttpServer server;
 
     public static void main(String[] args) throws Exception {
-        Path web = getWebDirectory();
+        startServer();
+        launch(args);
+    }
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+    private static void startServer() throws IOException {
+        Path web = getWebDirectory();
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", PORT), 0);
         server.createContext("/", exchange -> serveFile(exchange, web));
         server.createContext("/api/hello", App::apiHello);
         server.start();
-
-        System.out.println("Websity app running at http://localhost:" + PORT);
     }
 
-    private static Path getWebDirectory() throws Exception {
-        URI location = App.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-        Path jar = Path.of(location);
-        Path web = Files.isDirectory(jar) ? jar.resolve("web") : jar.getParent().resolve("web");
-        return web.normalize();
+    private static Path getWebDirectory() {
+        try {
+            URI location = App.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+            Path locationPath = Path.of(location);
+            if (Files.isDirectory(locationPath)) return locationPath.resolve("web").normalize();
+            return locationPath.getParent().resolve("web").normalize();
+        } catch (Exception e) {
+            return Path.of("web").toAbsolutePath().normalize();
+        }
+    }
+
+    @Override
+    public void start(Stage stage) {
+        WebView browser = new WebView();
+        browser.getEngine().load("http://127.0.0.1:" + PORT + "/");
+
+        stage.setTitle("Websity");
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
+        stage.setScene(new Scene(browser, 1100, 700));
+        stage.show();
+    }
+
+    @Override
+    public void stop() {
+        if (server != null) server.stop(0);
     }
 
     private static void apiHello(HttpExchange exchange) throws IOException {
@@ -38,8 +66,8 @@ public class App {
     private static void serveFile(HttpExchange exchange, Path web) throws IOException {
         String requestPath = exchange.getRequestURI().getPath();
         if (requestPath.equals("/")) requestPath = "/index.html";
-
         Path file = web.resolve(requestPath.substring(1)).normalize();
+
         if (!file.startsWith(web) || !Files.exists(file) || Files.isDirectory(file)) {
             send(exchange, 404, "text/plain; charset=UTF-8", "404 - File not found");
             return;
