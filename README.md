@@ -1,5 +1,5 @@
 # [websity](https://github.io)
-websity is a template for making website with no deploying
+websity is a template for making appwith no deploying
 
 # how to use this
 so fork the repository 
