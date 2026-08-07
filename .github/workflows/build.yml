@@ -12,17 +12,14 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout Websity
         uses: actions/checkout@v4
-
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
       - name: Compile Java
         shell: cmd
         run: |
@@ -31,12 +28,9 @@ jobs:
           mkdir build
           mkdir dist
           javac -d build src\main\java\App.java
-
       - name: Create JAR
         shell: cmd
-        run: |
-          jar --create --file dist\Websity.jar --main-class App -C build .
-
+        run: jar --create --file dist\Websity.jar --main-class App -C build .
       - name: Create Windows application image
         shell: cmd
         run: |
@@ -52,12 +46,10 @@ jobs:
             --dest dist ^
             --app-version 1.0.0 ^
             --add-modules jdk.httpserver
-
       - name: Create portable ZIP
         shell: powershell
         run: Compress-Archive -Path dist\Websity\* -DestinationPath dist\Websity-Portable.zip -Force
-
-      - name: Create Windows MSI installer
+      - name: Create MSI installer
         shell: cmd
         run: |
           jpackage ^
@@ -72,29 +64,25 @@ jobs:
             --win-dir-chooser ^
             --win-menu ^
             --win-shortcut
-
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: Websity-JAR
           path: dist/Websity.jar
           if-no-files-found: error
-
       - name: Upload portable app
         uses: actions/upload-artifact@v4
         with:
           name: Websity-Portable
           path: dist/Websity-Portable.zip
           if-no-files-found: error
-
-      - name: Upload MSI installer
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: Websity-Windows-Installer
           path: dist/Websity-1.0.0.msi
           if-no-files-found: error
-
-      - name: Publish GitHub Release
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
