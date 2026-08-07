@@ -1,0 +1,37 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: #111827;
+    color: #f9fafb;
+    display: grid;
+    place-items: center;
+}
+
+.app {
+    width: min(700px, 90vw);
+    padding: 40px;
+    border-radius: 16px;
+    background: #1f2937;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+}
+
+button {
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+pre {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #0b1220;
+    overflow: auto;
+}
