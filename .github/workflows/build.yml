@@ -51,6 +51,7 @@ jobs:
             --main-class App ^
             --dest dist ^
             --app-version 1.0.0 ^
+            --add-modules jdk.httpserver ^
             --win-dir-chooser ^
             --win-menu ^
             --win-shortcut
