@@ -20,14 +20,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Compile Java
+          cache: maven
+      - name: Build JavaFX app
         shell: cmd
         run: |
           if exist build rmdir /s /q build
           if exist dist rmdir /s /q dist
           mkdir build
           mkdir dist
-          javac -d build src\main\java\App.java
+          mvn -q dependency:copy-dependencies -DoutputDirectory=build\lib
+          javac --module-path build\lib --add-modules javafx.controls,javafx.web,jdk.httpserver -d build src\main\java\App.java
+          xcopy /E /I /Y web build\web
       - name: Create JAR
         shell: cmd
         run: jar --create --file dist\Websity.jar --main-class App -C build .
@@ -37,6 +40,7 @@ jobs:
           mkdir dist\app-input
           xcopy /E /I /Y web dist\app-input\web
           copy /Y dist\Websity.jar dist\app-input\Websity.jar
+          xcopy /E /I /Y build\lib dist\app-input\lib
           jpackage ^
             --type app-image ^
             --name Websity ^
@@ -45,7 +49,7 @@ jobs:
             --main-class App ^
             --dest dist ^
             --app-version 1.0.0 ^
-            --add-modules jdk.httpserver
+            --java-options "--module-path $APPDIR/lib --add-modules javafx.controls,javafx.web,jdk.httpserver"
       - name: Create portable ZIP
         shell: powershell
         run: Compress-Archive -Path dist\Websity\* -DestinationPath dist\Websity-Portable.zip -Force
@@ -60,7 +64,7 @@ jobs:
             --main-class App ^
             --dest dist ^
             --app-version 1.0.0 ^
-            --add-modules jdk.httpserver ^
+            --java-options "--module-path $APPDIR/lib --add-modules javafx.controls,javafx.web,jdk.httpserver" ^
             --win-dir-chooser ^
             --win-menu ^
             --win-shortcut
