@@ -1,64 +1,109 @@
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 
+import java.awt.Desktop;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class App extends Application {
+/**
+ * Websity 1.0
+ *
+ * Java powers the local app server while web/index.html is the app UI.
+ * Run with:
+ *   javac App.java
+ *   java App
+ */
+public class App {
+    private static final int PORT = 8080;
     private static Path webDirectory;
+    private static HttpServer server;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        webDirectory = findWebDirectory();
+        Path index = webDirectory.resolve("index.html");
+        if (!Files.exists(index)) {
+            throw new IOException("Websity could not find web/index.html: " + index);
+        }
+
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", PORT), 0);
+        server.createContext("/", App::serveFile);
+        server.createContext("/api/hello", App::hello);
+        server.start();
+
+        String url = "http://127.0.0.1:" + PORT + "/index.html";
+        System.out.println("Websity 1.0 is running.");
+        System.out.println("Web folder: " + webDirectory);
+        System.out.println("App: " + url);
+        System.out.println("Press Ctrl+C to stop Websity.");
+
         try {
-            webDirectory = findWebDirectory();
-            Path index = webDirectory.resolve("index.html");
-            if (!Files.exists(index)) {
-                System.err.println("Websity could not find web/index.html: " + index);
-                System.exit(1);
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(URI.create(url));
             }
-            launch(args);
         } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+            System.out.println("Open this URL manually: " + url);
         }
     }
 
     private static Path findWebDirectory() {
-        String configured = System.getProperty("websity.webdir");
-        if (configured != null && !configured.isBlank()) {
-            Path path = Path.of(configured).toAbsolutePath().normalize();
-            if (Files.exists(path.resolve("index.html"))) return path;
-        }
-
         Path current = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
-        if (Files.exists(current.resolve("web/index.html"))) return current.resolve("web");
+        Path web = current.resolve("web");
+        if (Files.exists(web.resolve("index.html"))) return web;
 
-        try {
-            Path location = Path.of(App.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            Path base = Files.isDirectory(location) ? location : location.getParent();
-            Path bundled = base.resolve("web");
-            if (Files.exists(bundled.resolve("index.html"))) return bundled;
-            Path parentBundled = base.getParent().resolve("web");
-            if (Files.exists(parentBundled.resolve("index.html"))) return parentBundled;
-        } catch (Exception ignored) { }
+        Path source = Path.of("src", "main", "web").toAbsolutePath().normalize();
+        if (Files.exists(source.resolve("index.html"))) return source;
 
-        return current.resolve("web");
+        return web;
     }
 
-    @Override
-    public void start(Stage stage) {
-        WebView webView = new WebView();
-        webView.setContextMenuEnabled(true);
-        webView.getEngine().setJavaScriptEnabled(true);
-        webView.getEngine().load(webDirectory.resolve("index.html").toUri().toString());
+    private static void hello(HttpExchange exchange) throws IOException {
+        send(exchange, 200, "application/json; charset=UTF-8", "{\"message\":\"Hello from Java! Websity is working.\"}");
+    }
 
-        stage.setTitle("Websity");
-        stage.setMinWidth(800);
-        stage.setMinHeight(600);
-        stage.setWidth(1100);
-        stage.setHeight(700);
-        stage.setScene(new Scene(webView));
-        stage.show();
+    private static void serveFile(HttpExchange exchange) throws IOException {
+        String request = exchange.getRequestURI().getPath();
+        if (request.equals("/") || request.isBlank()) request = "/index.html";
+
+        Path file = webDirectory.resolve(request.substring(1)).normalize();
+        if (!file.startsWith(webDirectory) || !Files.exists(file) || Files.isDirectory(file)) {
+            send(exchange, 404, "text/plain; charset=UTF-8", "404 - File not found");
+            return;
+        }
+
+        byte[] data = Files.readAllBytes(file);
+        exchange.getResponseHeaders().set("Content-Type", contentType(file));
+        exchange.getResponseHeaders().set("Cache-Control", "no-cache");
+        exchange.sendResponseHeaders(200, data.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(data);
+        }
+    }
+
+    private static String contentType(Path file) {
+        String name = file.getFileName().toString().toLowerCase();
+        if (name.endsWith(".html")) return "text/html; charset=UTF-8";
+        if (name.endsWith(".css")) return "text/css; charset=UTF-8";
+        if (name.endsWith(".js")) return "application/javascript; charset=UTF-8";
+        if (name.endsWith(".json")) return "application/json; charset=UTF-8";
+        if (name.endsWith(".png")) return "image/png";
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+        if (name.endsWith(".gif")) return "image/gif";
+        if (name.endsWith(".svg")) return "image/svg+xml";
+        if (name.endsWith(".ico")) return "image/x-icon";
+        return "application/octet-stream";
+    }
+
+    private static void send(HttpExchange exchange, int status, String type, String body) throws IOException {
+        byte[] data = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", type);
+        exchange.sendResponseHeaders(status, data.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(data);
+        }
     }
 }
