@@ -3,15 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Websity App</title>
+    <title>Websity 1.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header class="topbar">
+        <div class="brand">Websity <span>1.0</span></div>
+        <div class="address">HTML App Template</div>
+    </header>
     <main class="app">
-        <h1>Websity App</h1>
-        <p>Java + JavaScript + HTML</p>
-        <button id="helloButton">Call Java</button>
-        <pre id="output">Ready.</pre>
+        <section class="hero">
+            <h1>Build an app with Java + HTML</h1>
+            <p>Websity is a Java desktop template that loads your <code>web/index.html</code> as the app interface.</p>
+        </section>
+        <section class="card">
+            <h2>Your web app</h2>
+            <p>Edit these files to create your application:</p>
+            <div class="files">
+                <div><b>web/index.html</b><small>Your HTML interface</small></div>
+                <div><b>web/style.css</b><small>Your app styling</small></div>
+                <div><b>web/app.js</b><small>Your JavaScript logic</small></div>
+                <div><b>src/main/java/App.java</b><small>Your Java desktop code</small></div>
+            </div>
+            <button id="helloButton">Test Java connection</button>
+            <pre id="output">Ready.</pre>
+        </section>
     </main>
     <script src="app.js"></script>
 </body>
