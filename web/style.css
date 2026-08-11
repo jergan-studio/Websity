@@ -1,37 +1,65 @@
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
     min-height: 100vh;
     font-family: Arial, sans-serif;
-    background: #111827;
-    color: #f9fafb;
-    display: grid;
-    place-items: center;
+    background: #101318;
+    color: #f5f7fa;
 }
 
-.app {
-    width: min(700px, 90vw);
-    padding: 40px;
-    border-radius: 16px;
-    background: #1f2937;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+.topbar {
+    height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 22px;
+    background: #181c23;
+    border-bottom: 1px solid #2b313b;
 }
+
+.brand { font-size: 20px; font-weight: 800; }
+.brand span { font-size: 12px; opacity: .55; margin-left: 5px; }
+.address {
+    flex: 1;
+    max-width: 700px;
+    padding: 9px 14px;
+    border-radius: 9px;
+    background: #101318;
+    color: #9ba4b2;
+    font-size: 14px;
+}
+
+.app { width: min(900px, 92vw); margin: 0 auto; padding: 56px 0; }
+.hero { margin-bottom: 28px; }
+h1 { font-size: 42px; margin: 0 0 12px; }
+.hero p { color: #aeb6c2; font-size: 17px; line-height: 1.6; }
+code { color: #d7dde7; }
+
+.card {
+    padding: 28px;
+    border: 1px solid #2b313b;
+    border-radius: 16px;
+    background: #181c23;
+}
+.card h2 { margin-top: 0; }
+.card p { color: #aeb6c2; }
+
+.files { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 22px 0; }
+.files div { padding: 16px; border-radius: 10px; background: #101318; }
+.files b, .files small { display: block; }
+.files small { margin-top: 6px; color: #87909d; }
 
 button {
-    padding: 10px 16px;
+    padding: 11px 17px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 9px;
     cursor: pointer;
     font-weight: 700;
 }
+pre { margin-top: 18px; padding: 14px; border-radius: 9px; background: #0b0e12; overflow: auto; }
 
-pre {
-    margin-top: 20px;
-    padding: 16px;
-    border-radius: 8px;
-    background: #0b1220;
-    overflow: auto;
+@media (max-width: 650px) {
+    .files { grid-template-columns: 1fr; }
+    h1 { font-size: 32px; }
 }
